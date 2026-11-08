@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astoren Quote Board</title>
+<style>
+/*
+  key-quote-board.html — Astoren Wallet, Exchange board + preview sheet (phone, light + dark)
+  Governing spine sections:
+    DESIGN.md      Colors (accent tint ONLY on better-than-house rows; rates never green/red),
+                   Typography (amount-display = "You get" only; amount-lg = row rate + "You pay"; 4dp rates, 2dp money; tnum),
+                   Layout & Spacing (rows >= 64px, primary action in sticky footer / bottom of sheet),
+                   Elevation (preview sheet raised), Shapes (rounded.xl sheet top, rounded.md rows, rounded.full direction switch),
+                   Components: Quote row (house / better than house / out of range), Preview sheet, Lock countdown
+    EXPERIENCE.md  Information Architecture: Exchange (quote board), Exchange preview
+                   Voice and Tone ("House rate", "Better than house by x%", "Total cost ... A typical bureau charges about €64.", no "trade"/"spread")
+                   Component Patterns: Direction switch, Amount input, Quote board (best first, house pinned, out-of-range greyed below),
+                   Preview sheet (10s lock / "Fixed rate, no timer"), Lock countdown
+                   State Patterns: Lost race
+                   Key Flows: Flow 3 (Jonas, EUR -> USD, You get $1,000) steps 1-4
+*/
+
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  background: #CBD2DC; color: #1C2433; padding: 32px 16px 64px;
+  font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums;
+}
+.page-title { font-size: 20px; font-weight: 600; line-height: 1.3; max-width: 1240px; margin: 0 auto 4px; }
+.page-sub { font-size: 13px; color: #3B4454; max-width: 1240px; margin: 0 auto 24px; }
+.section { max-width: 1240px; margin: 0 auto 40px; }
+.section h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.section > p { font-size: 13px; color: #3B4454; margin-bottom: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 32px; }
+.frame-wrap { display: flex; flex-direction: column; gap: 8px; }
+.frame-label { font-size: 13px; font-weight: 500; color: #3B4454; }
+
+/* ---- Tokens: light (DESIGN.md colors.*) ---- */
+.t-light {
+  --background:#F5F7FA; --foreground:#1C2433; --card:#FFFFFF; --card-foreground:#1C2433;
+  --muted:#EEF1F5; --muted-foreground:#5B6474; --border:#DDE2EA; --ring:#2563EB;
+  --primary:#2563EB; --primary-foreground:#FFFFFF; --accent:#DBEAFE; --accent-foreground:#1E3A8A;
+  --status-success:#137333; --status-warning:#A14A07; --status-neutral:#5B6474;
+  --test-banner:#FEF3C7; --test-banner-foreground:#78350F;
+  --shadow-raised: 0 10px 30px rgba(28,36,51,.14), 0 2px 6px rgba(28,36,51,.08);
+  --scrim: rgba(28,36,51,.45);
+}
+/* ---- Tokens: dark (DESIGN.md colors.*-dark) ---- */
+.t-dark {
+  --background:#0E1320; --foreground:#E6EAF2; --card:#161C2B; --card-foreground:#E6EAF2;
+  --muted:#1E2535; --muted-foreground:#9AA4B8; --border:#2A3243; --ring:#4C8DFF;
+  --primary:#4C8DFF; --primary-foreground:#0A1630; --accent:#1A2B4F; --accent-foreground:#BFD6FF;
+  --status-success:#4ADE80; --status-warning:#FBBF24; --status-neutral:#9AA4B8;
+  --test-banner:#3A2E0B; --test-banner-foreground:#FCD34D;
+  --shadow-raised: none; /* dark: depth from card colour, not shadow */
+  --scrim: rgba(4,7,14,.65);
+}
+
+/* ---- Phone frame ---- */
+.phone {
+  width: 390px; height: 844px; border-radius: 48px; padding: 10px;
+  background: #0B0F18; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  flex: none;
+}
+.screen {
+  position: relative; width: 100%; height: 100%; border-radius: 38px; overflow: hidden;
+  background: var(--background); color: var(--foreground);
+  display: flex; flex-direction: column;
+}
+.statusbar { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; font-size: 14px; font-weight: 600; background: var(--background); color: var(--foreground); }
+.statusbar .notch { width: 110px; height: 28px; border-radius: 9999px; background: #0B0F18; }
+.statusbar .sys { display:flex; gap:6px; align-items:center; }
+.statusbar .sys i { display:block; width: 18px; height: 10px; border-radius: 3px; border: 1.5px solid var(--foreground); }
+
+/* Test-money banner (pilot) — pinned above header, not dismissable */
+.test-banner { flex: none; background: var(--test-banner); color: var(--test-banner-foreground);
+  font-size: 13px; line-height: 1.4; font-weight: 500; text-align: center; padding: 6px 16px;
+  display:flex; align-items:center; justify-content:center; gap:6px; }
+
+.header { flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.header .title { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.icon-btn { width: 44px; height: 44px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; color: var(--foreground); }
+.icon-btn svg, .ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ico-sm { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex:none; }
+
+.content { flex: 1; overflow: hidden; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Typography ramp */
+.amount-display { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+.amount-lg { font-size: 24px; font-weight: 600; line-height: 1.2; }
+.t-title { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.t-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
+.t-label { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.t-caption { font-size: 13px; font-weight: 400; line-height: 1.4; }
+.muted-fg { color: var(--muted-foreground); }
+.num { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
+.mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+.card { background: var(--card); color: var(--card-foreground); border-radius: 16px; border: 1px solid var(--border); }
+
+/* Buttons */
+.btn { height: 48px; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 600; display:flex; align-items:center; justify-content:center; gap: 8px; border: none; width: 100%; }
+.btn-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); }
+.btn-ghost { background: transparent; color: var(--primary); }
+.btn-sm { height: 44px; font-size: 14px; font-weight: 500; }
+
+/* Status pill: icon + label, always */
+.pill { display:inline-flex; align-items:center; gap: 4px; border-radius: 9999px; font-size: 13px; line-height: 1.4; font-weight: 500;
+  padding: 2px 10px 2px 8px; border: 1px solid currentColor; background: var(--card); white-space: nowrap; }
+.pill.success { color: var(--status-success); }
+.pill.warning { color: var(--status-warning); }
+.pill.neutral { color: var(--status-neutral); }
+
+/* Bottom tab bar */
+.tabbar { flex: none; height: 82px; padding: 8px 8px 26px; display:grid; grid-template-columns: repeat(4,1fr);
+  background: var(--card); border-top: 1px solid var(--border); }
+.tab { display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 2px; font-size: 13px; font-weight: 500; color: var(--muted-foreground); min-height: 44px; }
+.tab.active { color: var(--primary); }
+
+/* Sticky footer (thumb reach) */
+.footer { flex: none; padding: 12px 16px 30px; background: var(--background); border-top: 1px solid var(--border); }
+
+/* Scrim + bottom drawer */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.drawer { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); color: var(--card-foreground);
+  border-radius: 24px 24px 0 0; box-shadow: var(--shadow-raised); padding: 8px 16px 30px; display:flex; flex-direction:column; gap: 16px; }
+.t-dark .drawer { border-top: 1px solid var(--border); }
+.grabber { width: 40px; height: 5px; border-radius: 9999px; background: var(--border); margin: 0 auto 4px; }
+.sep { height: 1px; background: var(--border); }
+.kv { display:flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+
+/* Alert (shadcn Alert, inherited) */
+.alert { border: 1px solid var(--border); background: var(--muted); border-radius: 12px; padding: 12px; display:flex; gap: 10px; align-items:flex-start; font-size: 14px; line-height: 1.4; font-weight: 500; }
+
+/* Lock countdown: primary bar on muted track; never red */
+.lock { display:flex; flex-direction:column; gap: 6px; }
+.lock .track { height: 4px; border-radius: 9999px; background: var(--muted); overflow: hidden; }
+.lock .bar { height: 100%; background: var(--primary); border-radius: 9999px; }
+
+
+.switch { display:flex; background: var(--muted); border-radius: 9999px; padding: 4px; }
+.switch span { flex:1; text-align:center; height: 40px; display:flex; align-items:center; justify-content:center; border-radius: 9999px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); }
+.switch span.on { background: var(--card); color: var(--foreground); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.amount { padding: 12px 16px; display:flex; flex-direction:column; gap: 4px; }
+.amount .field { display:flex; justify-content: space-between; align-items: baseline; }
+.quotes { display:flex; flex-direction:column; gap: 8px; }
+.q { min-height: 64px; border-radius: 12px; padding: 10px 14px; display:flex; justify-content:space-between; align-items:center; gap: 8px; }
+.q .l, .q .r { display:flex; flex-direction:column; gap: 2px; }
+.q .r { align-items:flex-end; text-align:right; }
+.q .rate { font-size: 20px; font-weight: 600; line-height: 1.2; }
+.q-better { background: var(--accent); color: var(--accent-foreground); }
+.q-better .sub { color: var(--accent-foreground); }
+.q-house { background: var(--muted); color: var(--foreground); }
+.q-house .sub { color: var(--muted-foreground); }
+.q-out { background: transparent; color: var(--muted-foreground); opacity: .6; border: 1px dashed var(--border); }
+.q.selected { outline: 2px solid var(--ring); outline-offset: 1px; }
+.board-links { display:flex; gap: 8px; }
+.board-links .btn { height: 44px; font-size: 14px; font-weight: 500; }
+.bg-board { padding: 0 16px; display:flex; flex-direction:column; gap: 12px; }
+.you-pay { display:flex; flex-direction:column; gap: 2px; }
+.cost-line { font-size: 14px; line-height: 1.4; }
+.fixed-note { display:flex; align-items:center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--muted-foreground); }
+
+</style>
+</head>
+<body>
+<h1 class="page-title">Exchange — Jonas, EUR → USD, You get $1,000</h1>
+<p class="page-sub">Flow 3. Market rate 1 EUR = 1.0971 USD (€911.50 for $1,000); costs are measured against it.</p>
+<div class="section"><h2>A. Quote board at rest</h2><p>Two offers better than house (accent tint) above the house row; one out-of-range offer greyed below it.</p><div class="row"><div class="frame-wrap"><div class="frame-label">Light</div><div class="phone t-light"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<main class="content">
+  <div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div>
+  <div class="kv t-caption muted-fg"><span>Rates in USD per 1 EUR · best first</span></div>
+  <div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div><div class="q q-out"><div class="l"><span class="rate num">1.0848 USD</span><span class="t-caption sub num">Out of range</span></div><div class="r"><span class="t-label num">You pay €921.80</span><span class="t-caption sub num">Up to $800 available</span></div></div></div>
+  <div class="board-links"><span class="btn btn-outline">Post your own rate</span><span class="btn btn-outline"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Alert me</span></div>
+</main>
+<nav class="tabbar"><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></div><div class="tab active"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg><span>Exchange</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Activity</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Account</span></div></nav></div></div></div><div class="frame-wrap"><div class="frame-label">Dark</div><div class="phone t-dark"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<main class="content">
+  <div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div>
+  <div class="kv t-caption muted-fg"><span>Rates in USD per 1 EUR · best first</span></div>
+  <div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div><div class="q q-out"><div class="l"><span class="rate num">1.0848 USD</span><span class="t-caption sub num">Out of range</span></div><div class="r"><span class="t-label num">You pay €921.80</span><span class="t-caption sub num">Up to $800 available</span></div></div></div>
+  <div class="board-links"><span class="btn btn-outline">Post your own rate</span><span class="btn btn-outline"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Alert me</span></div>
+</main>
+<nav class="tabbar"><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></div><div class="tab active"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg><span>Exchange</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Activity</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Account</span></div></nav></div></div></div></div></div>
+<div class="section"><h2>B. Preview sheet — fixed offer</h2><p>Flow 3 step 3: top offer tapped. Fixed offer, so no lock timer.</p><div class="row"><div class="frame-wrap"><div class="frame-label">Light</div><div class="phone t-light"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better selected"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€914.20</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0939 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€2.70 (0.30%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="fixed-note"><svg class="ico-sm" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Fixed rate, no timer</div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div><div class="frame-wrap"><div class="frame-label">Dark</div><div class="phone t-dark"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better selected"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€914.20</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0939 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€2.70 (0.30%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="fixed-note"><svg class="ico-sm" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Fixed rate, no timer</div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div></div></div>
+<div class="section"><h2>C. Lost race</h2><p>Flow 3 step 4: sheet stays open; next-best offer (pegged) pre-selected with a fresh preview and a fresh 10s lock.</p><div class="row"><div class="frame-wrap"><div class="frame-label">Light</div><div class="phone t-light"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better selected"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  <div class="alert" role="alert"><svg class="ico-sm" viewBox="0 0 24 24" style="width:18px;height:18px;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><span>That offer was just taken. Nothing was charged.</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€915.10</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0928 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€3.60 (0.39%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="lock" aria-label="Rate held for 10 seconds"><div class="kv t-label"><span class="muted-fg">Rate held</span><span class="num">10s</span></div><div class="track"><div class="bar" style="width:100%"></div></div></div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div><div class="frame-wrap"><div class="frame-label">Dark</div><div class="phone t-dark"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better selected"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  <div class="alert" role="alert"><svg class="ico-sm" viewBox="0 0 24 24" style="width:18px;height:18px;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg><span>That offer was just taken. Nothing was charged.</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€915.10</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0928 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€3.60 (0.39%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="lock" aria-label="Rate held for 10 seconds"><div class="kv t-label"><span class="muted-fg">Rate held</span><span class="num">10s</span></div><div class="track"><div class="bar" style="width:100%"></div></div></div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div></div></div>
+<div class="section"><h2>D. House rate preview — lock countdown running</h2><p>Pegged / house quotes hold for 10s (FR-14); shown at 7s left. Bar is primary on a muted track and never turns red.</p><div class="row"><div class="frame-wrap"><div class="frame-label">Light</div><div class="phone t-light"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house selected"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€917.40</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0900 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€5.90 (0.65%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="lock" aria-label="Rate held for 7 seconds"><div class="kv t-label"><span class="muted-fg">Rate held</span><span class="num">7s</span></div><div class="track"><div class="bar" style="width:70%"></div></div></div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div><div class="frame-wrap"><div class="frame-label">Dark</div><div class="phone t-dark"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Exchange</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<div class="bg-board"><div class="switch"><span>USD → EUR</span><span class="on">EUR → USD</span></div>
+  <div class="card amount">
+    <span class="t-caption muted-fg">You get</span>
+    <div class="field"><span class="amount-lg num">$1,000.00</span><span class="t-label muted-fg">USD</span></div>
+    <span class="t-caption muted-fg num">You have €2,140.00 available</span>
+  </div><div class="quotes"><div class="q q-better"><div class="l"><span class="rate num">1.0939 USD</span><span class="t-caption sub num">Better than house by 0.35%</span></div><div class="r"><span class="t-label num">You pay €914.20</span><span class="t-caption sub num">Up to $1,500 available</span></div></div><div class="q q-better"><div class="l"><span class="rate num">1.0928 USD</span><span class="t-caption sub num">Better than house by 0.25%</span></div><div class="r"><span class="t-label num">You pay €915.10</span><span class="t-caption sub num">Up to $3,200 available</span></div></div><div class="q q-house selected"><div class="l"><span class="t-label">House rate</span><span class="rate num">1.0900 USD</span><span class="t-caption sub">Guaranteed fallback</span></div><div class="r"><span class="t-label num">You pay €917.40</span></div></div></div></div>
+<div class="scrim"></div><div class="drawer" role="dialog" aria-label="Exchange preview">
+  <div class="grabber"></div>
+  
+  <div class="you-pay"><span class="t-caption muted-fg">You pay</span><span class="amount-lg num">€917.40</span></div>
+  <div class="you-pay"><span class="t-caption muted-fg">You get</span><span class="amount-display num">$1,000.00</span></div>
+  <div class="sep"></div>
+  <div class="kv t-label"><span class="muted-fg">Rate</span><span class="num">1 EUR = 1.0900 USD</span></div>
+  <div class="kv t-label"><span class="muted-fg">Total cost</span><span class="num">€5.90 (0.65%)</span></div>
+  <p class="cost-line muted-fg">A typical bureau charges about €64.</p>
+  <div class="lock" aria-label="Rate held for 7 seconds"><div class="kv t-label"><span class="muted-fg">Rate held</span><span class="num">7s</span></div><div class="track"><div class="bar" style="width:70%"></div></div></div>
+  <span class="btn btn-primary">Confirm</span>
+</div></div></div></div></div></div>
+</body>
+</html>

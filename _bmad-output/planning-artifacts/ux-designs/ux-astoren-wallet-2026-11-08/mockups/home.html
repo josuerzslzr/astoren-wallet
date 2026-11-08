@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astoren Home</title>
+<style>
+/*
+  key-home.html — Astoren Wallet, Home (phone, light + dark)
+  Governing spine sections:
+    DESIGN.md      Colors (light + *-dark tokens; no green/red on amounts), Typography
+                   (amount-display once per screen, amount-lg secondary, tnum everywhere),
+                   Layout & Spacing (16px gutter, 44px targets), Elevation (code card raised),
+                   Shapes, Components: Balance card, Withdrawal code, Status pill, Test-money banner
+    EXPERIENCE.md  Information Architecture: Home row; Navigation (bottom tabs Home·Exchange·Activity·Account,
+                   bell in header); Persistent chrome (pilot) test-money banner
+                   Component Patterns: Balance card (held + pending always shown, even at zero),
+                   "In progress" list (sorted by urgency, soonest expiry first), Withdrawal code card,
+                   Status pill (icon + label, PRD vocabulary)
+                   Key Flows: Flow 1 step 4-5 (Lena: $340.00 available · $300.00 pending; code card at top)
+*/
+
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  background: #CBD2DC; color: #1C2433; padding: 32px 16px 64px;
+  font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums;
+}
+.page-title { font-size: 20px; font-weight: 600; line-height: 1.3; max-width: 1240px; margin: 0 auto 4px; }
+.page-sub { font-size: 13px; color: #3B4454; max-width: 1240px; margin: 0 auto 24px; }
+.section { max-width: 1240px; margin: 0 auto 40px; }
+.section h2 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.section > p { font-size: 13px; color: #3B4454; margin-bottom: 16px; }
+.row { display: flex; flex-wrap: wrap; gap: 32px; }
+.frame-wrap { display: flex; flex-direction: column; gap: 8px; }
+.frame-label { font-size: 13px; font-weight: 500; color: #3B4454; }
+
+/* ---- Tokens: light (DESIGN.md colors.*) ---- */
+.t-light {
+  --background:#F5F7FA; --foreground:#1C2433; --card:#FFFFFF; --card-foreground:#1C2433;
+  --muted:#EEF1F5; --muted-foreground:#5B6474; --border:#DDE2EA; --ring:#2563EB;
+  --primary:#2563EB; --primary-foreground:#FFFFFF; --accent:#DBEAFE; --accent-foreground:#1E3A8A;
+  --status-success:#137333; --status-warning:#A14A07; --status-neutral:#5B6474;
+  --test-banner:#FEF3C7; --test-banner-foreground:#78350F;
+  --shadow-raised: 0 10px 30px rgba(28,36,51,.14), 0 2px 6px rgba(28,36,51,.08);
+  --scrim: rgba(28,36,51,.45);
+}
+/* ---- Tokens: dark (DESIGN.md colors.*-dark) ---- */
+.t-dark {
+  --background:#0E1320; --foreground:#E6EAF2; --card:#161C2B; --card-foreground:#E6EAF2;
+  --muted:#1E2535; --muted-foreground:#9AA4B8; --border:#2A3243; --ring:#4C8DFF;
+  --primary:#4C8DFF; --primary-foreground:#0A1630; --accent:#1A2B4F; --accent-foreground:#BFD6FF;
+  --status-success:#4ADE80; --status-warning:#FBBF24; --status-neutral:#9AA4B8;
+  --test-banner:#3A2E0B; --test-banner-foreground:#FCD34D;
+  --shadow-raised: none; /* dark: depth from card colour, not shadow */
+  --scrim: rgba(4,7,14,.65);
+}
+
+/* ---- Phone frame ---- */
+.phone {
+  width: 390px; height: 844px; border-radius: 48px; padding: 10px;
+  background: #0B0F18; box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  flex: none;
+}
+.screen {
+  position: relative; width: 100%; height: 100%; border-radius: 38px; overflow: hidden;
+  background: var(--background); color: var(--foreground);
+  display: flex; flex-direction: column;
+}
+.statusbar { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px; font-size: 14px; font-weight: 600; background: var(--background); color: var(--foreground); }
+.statusbar .notch { width: 110px; height: 28px; border-radius: 9999px; background: #0B0F18; }
+.statusbar .sys { display:flex; gap:6px; align-items:center; }
+.statusbar .sys i { display:block; width: 18px; height: 10px; border-radius: 3px; border: 1.5px solid var(--foreground); }
+
+/* Test-money banner (pilot) — pinned above header, not dismissable */
+.test-banner { flex: none; background: var(--test-banner); color: var(--test-banner-foreground);
+  font-size: 13px; line-height: 1.4; font-weight: 500; text-align: center; padding: 6px 16px;
+  display:flex; align-items:center; justify-content:center; gap:6px; }
+
+.header { flex: none; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+.header .title { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.icon-btn { width: 44px; height: 44px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; color: var(--foreground); }
+.icon-btn svg, .ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ico-sm { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex:none; }
+
+.content { flex: 1; overflow: hidden; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Typography ramp */
+.amount-display { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+.amount-lg { font-size: 24px; font-weight: 600; line-height: 1.2; }
+.t-title { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.t-body { font-size: 16px; font-weight: 400; line-height: 1.5; }
+.t-label { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.t-caption { font-size: 13px; font-weight: 400; line-height: 1.4; }
+.muted-fg { color: var(--muted-foreground); }
+.num { font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
+.mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+.card { background: var(--card); color: var(--card-foreground); border-radius: 16px; border: 1px solid var(--border); }
+
+/* Buttons */
+.btn { height: 48px; border-radius: 12px; font: inherit; font-size: 16px; font-weight: 600; display:flex; align-items:center; justify-content:center; gap: 8px; border: none; width: 100%; }
+.btn-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); }
+.btn-ghost { background: transparent; color: var(--primary); }
+.btn-sm { height: 44px; font-size: 14px; font-weight: 500; }
+
+/* Status pill: icon + label, always */
+.pill { display:inline-flex; align-items:center; gap: 4px; border-radius: 9999px; font-size: 13px; line-height: 1.4; font-weight: 500;
+  padding: 2px 10px 2px 8px; border: 1px solid currentColor; background: var(--card); white-space: nowrap; }
+.pill.success { color: var(--status-success); }
+.pill.warning { color: var(--status-warning); }
+.pill.neutral { color: var(--status-neutral); }
+
+/* Bottom tab bar */
+.tabbar { flex: none; height: 82px; padding: 8px 8px 26px; display:grid; grid-template-columns: repeat(4,1fr);
+  background: var(--card); border-top: 1px solid var(--border); }
+.tab { display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 2px; font-size: 13px; font-weight: 500; color: var(--muted-foreground); min-height: 44px; }
+.tab.active { color: var(--primary); }
+
+/* Sticky footer (thumb reach) */
+.footer { flex: none; padding: 12px 16px 30px; background: var(--background); border-top: 1px solid var(--border); }
+
+/* Scrim + bottom drawer */
+.scrim { position: absolute; inset: 0; background: var(--scrim); }
+.drawer { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); color: var(--card-foreground);
+  border-radius: 24px 24px 0 0; box-shadow: var(--shadow-raised); padding: 8px 16px 30px; display:flex; flex-direction:column; gap: 16px; }
+.t-dark .drawer { border-top: 1px solid var(--border); }
+.grabber { width: 40px; height: 5px; border-radius: 9999px; background: var(--border); margin: 0 auto 4px; }
+.sep { height: 1px; background: var(--border); }
+.kv { display:flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+
+/* Alert (shadcn Alert, inherited) */
+.alert { border: 1px solid var(--border); background: var(--muted); border-radius: 12px; padding: 12px; display:flex; gap: 10px; align-items:flex-start; font-size: 14px; line-height: 1.4; font-weight: 500; }
+
+/* Lock countdown: primary bar on muted track; never red */
+.lock { display:flex; flex-direction:column; gap: 6px; }
+.lock .track { height: 4px; border-radius: 9999px; background: var(--muted); overflow: hidden; }
+.lock .bar { height: 100%; background: var(--primary); border-radius: 9999px; }
+
+
+.balance { padding: 16px; display:flex; flex-direction:column; gap: 8px; }
+.balance .cur { display:flex; align-items:center; gap: 8px; }
+.flag { width: 24px; height: 24px; border-radius: 9999px; display:flex; align-items:center; justify-content:center; font-size: 11px; font-weight: 700; background: var(--muted); color: var(--foreground); }
+.buckets { display:flex; gap: 16px; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--muted-foreground); }
+.buckets b { font-weight: 600; color: var(--foreground); }
+.balance-row { display:flex; gap: 12px; }
+.balance-row .card { flex: 1; }
+.actions { display:grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.action { display:flex; flex-direction:column; align-items:center; gap: 6px; font-size: 13px; font-weight: 500; }
+.action .circ { width: 52px; height: 52px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); display:flex; align-items:center; justify-content:center; color: var(--primary); }
+.section-h { display:flex; justify-content:space-between; align-items:baseline; font-size: 14px; font-weight: 600; }
+.section-h a { color: var(--primary); font-weight: 500; text-decoration: none; }
+.codecard { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; box-shadow: var(--shadow-raised); display:flex; flex-direction:column; gap: 10px; }
+.codecard .code { background: var(--muted); color: var(--foreground); border-radius: 12px; padding: 8px 12px; font-size: 22px; font-weight: 600; letter-spacing: 0.08em; }
+.codecard .acts { display:flex; gap: 8px; }
+.codecard .acts .btn { height: 44px; font-size: 14px; font-weight: 500; }
+.item { display:flex; justify-content:space-between; align-items:center; gap: 8px; padding: 12px; min-height: 64px; }
+.list { background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
+.list .item + .item { border-top: 1px solid var(--border); }
+.item .l { display:flex; flex-direction:column; gap: 2px; }
+.item .r { display:flex; flex-direction:column; align-items:flex-end; gap: 4px; }
+
+</style>
+</head>
+<body>
+<h1 class="page-title">Home — Lena, night before her flight</h1>
+<p class="page-sub">Flow 1 step 4: after getting her cash code. USD $340.00 available · $0.00 held · $300.00 pending; the code card leads "In progress".</p>
+<div class="section"><div class="row"><div class="frame-wrap"><div class="frame-label">Light</div><div class="phone t-light"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Home</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<main class="content">
+  <div class="card balance">
+    <div class="cur"><span class="flag">US</span><span class="t-label">USD</span><span class="t-caption muted-fg">Available</span></div>
+    <div class="amount-display num">$340.00</div>
+    <div class="buckets num"><span>Held <b>$0.00</b></span><span>Pending <b>$300.00</b></span></div>
+  </div>
+  <div class="card balance">
+    <div class="cur"><span class="flag">EU</span><span class="t-label">EUR</span><span class="t-caption muted-fg">Available</span></div>
+    <div class="amount-lg num">€482.60</div>
+    <div class="buckets num"><span>Held <b>€0.00</b></span><span>Pending <b>€0.00</b></span></div>
+  </div>
+  <div class="actions">
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg></span>Exchange</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Add money</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M5 20h14"/></svg></span>Withdraw</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>Send</div>
+  </div>
+  <div class="section-h"><span>In progress</span></div>
+  <div class="codecard">
+    <div class="kv"><span class="t-label">Cash withdrawal · <span class="num">$300.00</span></span><span class="pill neutral"><svg class="ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>pending</span></div>
+    <div class="acts"><div class="code mono num" style="flex:1" aria-label="7 K Q 4 M 2 X P 9">7KQ4 M2XP 9</div><span class="btn btn-outline" style="width:auto;padding:0 14px"><svg class="ico-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy</span></div>
+    <div class="t-caption muted-fg num">Valid until 21:10 tomorrow</div>
+  </div>
+  <div class="section-h"><span>Recent activity</span><a>See all</a></div>
+  <div class="list">
+    <div class="item"><div class="l"><span class="t-label">Cash withdrawal</span><span class="t-caption muted-fg num">Today, 21:10</span></div><div class="r"><span class="t-label num">$300.00</span><span class="pill neutral"><svg class="ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>pending</span></div></div>
+    <div class="item"><div class="l"><span class="t-label">Deposit, bank transfer</span><span class="t-caption muted-fg num">Fri, 10:42</span></div><div class="r"><span class="t-label num">$640.00</span><span class="pill success"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>completed</span></div></div>
+  </div>
+</main>
+<nav class="tabbar"><div class="tab active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg><span>Exchange</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Activity</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Account</span></div></nav></div></div></div><div class="frame-wrap"><div class="frame-label">Dark</div><div class="phone t-dark"><div class="screen"><div class="statusbar"><span class="num">9:41</span><span class="notch"></span><span class="sys"><i></i></span></div>
+<div class="test-banner" role="banner"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4 20a1 1 0 0 0 .9 1.5h14.2A1 1 0 0 0 20 20l-6-11V3"/></svg>Test money — no real value</div>
+<header class="header"><span class="title">Home</span><span class="icon-btn" aria-label="Notifications"><svg class="ico" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span></header>
+<main class="content">
+  <div class="card balance">
+    <div class="cur"><span class="flag">US</span><span class="t-label">USD</span><span class="t-caption muted-fg">Available</span></div>
+    <div class="amount-display num">$340.00</div>
+    <div class="buckets num"><span>Held <b>$0.00</b></span><span>Pending <b>$300.00</b></span></div>
+  </div>
+  <div class="card balance">
+    <div class="cur"><span class="flag">EU</span><span class="t-label">EUR</span><span class="t-caption muted-fg">Available</span></div>
+    <div class="amount-lg num">€482.60</div>
+    <div class="buckets num"><span>Held <b>€0.00</b></span><span>Pending <b>€0.00</b></span></div>
+  </div>
+  <div class="actions">
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg></span>Exchange</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Add money</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M5 20h14"/></svg></span>Withdraw</div>
+    <div class="action"><span class="circ"><svg class="ico" viewBox="0 0 24 24"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg></span>Send</div>
+  </div>
+  <div class="section-h"><span>In progress</span></div>
+  <div class="codecard">
+    <div class="kv"><span class="t-label">Cash withdrawal · <span class="num">$300.00</span></span><span class="pill neutral"><svg class="ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>pending</span></div>
+    <div class="acts"><div class="code mono num" style="flex:1" aria-label="7 K Q 4 M 2 X P 9">7KQ4 M2XP 9</div><span class="btn btn-outline" style="width:auto;padding:0 14px"><svg class="ico-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copy</span></div>
+    <div class="t-caption muted-fg num">Valid until 21:10 tomorrow</div>
+  </div>
+  <div class="section-h"><span>Recent activity</span><a>See all</a></div>
+  <div class="list">
+    <div class="item"><div class="l"><span class="t-label">Cash withdrawal</span><span class="t-caption muted-fg num">Today, 21:10</span></div><div class="r"><span class="t-label num">$300.00</span><span class="pill neutral"><svg class="ico-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>pending</span></div></div>
+    <div class="item"><div class="l"><span class="t-label">Deposit, bank transfer</span><span class="t-caption muted-fg num">Fri, 10:42</span></div><div class="r"><span class="t-label num">$640.00</span><span class="pill success"><svg class="ico-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>completed</span></div></div>
+  </div>
+</main>
+<nav class="tabbar"><div class="tab active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4"/><path d="M3 8h14"/><path d="m17 20 4-4-4-4"/><path d="M21 16H7"/></svg><span>Exchange</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span>Activity</span></div><div class="tab"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Account</span></div></nav></div></div></div></div></div>
+</body>
+</html>
