@@ -2,7 +2,7 @@
 title: "PRD: Hybrid P2P USD/EUR Exchange Wallet"
 status: final
 created: 2026-11-04
-updated: 2026-11-07
+updated: 2026-11-08
 ---
 
 # PRD: Astoren Wallet — Hybrid P2P USD/EUR Exchange Wallet
@@ -86,6 +86,32 @@ Marco moved from the US to Munich and has $800 in cash he wants to exchange.
 **UJ-3. Jonas loses the race and still gets a good rate.**
 Jonas lives in Hamburg and is travelling to El Salvador. He needs $1,000 from his EUR balance. On the quote board he sees a P2P offer better than the house quote and taps it. The preview shows exactly how many EUR he'll pay. He confirms, but another user took that offer a moment earlier. The app tells him the offer was taken and pre-selects the next-best offer, with the house quote as fallback. He reviews the new preview, confirms, and has his $1,000. Nothing was charged for the failed attempt.
 
+**UJ-4. Aylin posts an offer and waits (pegged offer).**
+Aylin lives in the EU and is going to New York in six weeks. She needs USD from her EUR balance, but she isn't in a hurry.
+1. On the EUR→USD quote board, the best rate isn't good enough. She posts a **pegged offer at market + 0.3%** for €1,500. The preview shows what she'd receive at today's rate and that €1,500 will be **held** while the offer is open.
+2. She posts. Her EUR balance shows €1,500 held, and the board shows her offer. It reprices itself as the market moves.
+3. Two days later she's notified that her offer was partly filled: $640 of about $1,630. The rest stays on the board, still pegged.
+4. The next morning it fills completely. The USD is in her available balance, and nothing is held any more.
+
+*What matters most:* Aylin beats the board's rate without ever watching the screen (JTBD-2, JTBD-4).
+
+**UJ-5. Sam settles a split bill (transfer).**
+After dinner, Sam owes Pia €42. Sam opens a transfer and enters Pia's email. The app shows Pia's display name, "Pia Hoffmann", before Sam enters an amount. Sam enters €42, sees that the transfer is instant and can't be undone, and confirms. Both wallets update at once.
+
+*What matters most:* Sam knows the money is going to the right person before it leaves, because it can't be called back (JTBD-5).
+
+**UJ-6. Marco pays out EUR to his bank (bank payout).**
+A month after his first deposit (UJ-2), Marco holds €1,200 from an exchange.
+1. He chooses to withdraw by **bank payout** and enters €500. It's his first payout, so he enters his German IBAN and account name and saves the account for next time.
+2. The all-in cost preview shows €500 withdrawn, €500 reaching his bank and a cost of €0 (0%). He confirms.
+3. His EUR balance shows €700 available and €500 pending, and his history shows the payout as *pending*.
+4. The partner bank confirms the payout. The pending €500 leaves his balance, and the payout shows **completed**.
+
+*When it doesn't go to plan:*
+- **The bank rejects it** (for example, a mistyped IBAN). The payout shows *rejected*, the €500 returns to available, and Marco can correct the saved account.
+
+*What matters most:* Marco knows where his €500 is at every step (JTBD-3).
+
 ## 3. Glossary
 
 - **Wallet** — A user's account, holding one USD balance and one EUR balance. "The wallet" on its own also means the product as a system, as in "the wallet credits the deposit".
@@ -93,7 +119,7 @@ Jonas lives in Hamburg and is travelling to El Salvador. He needs $1,000 from hi
 - **Market rate** — The live USD/EUR mid rate, supplied by the FX quote service.
 - **FX quote service** — The external source of the market rate.
 - **House** — The platform treasury. It fills exchanges no offer covers, from its own USD and EUR balances.
-- **House quote** — The house's rate: the market rate plus the house spread. Available unless briefly paused (FR-15, FR-16), and the worst rate a user can take.
+- **House quote** — The house's rate: the market rate plus the house spread. Available unless briefly paused (FR-15, FR-16), and the worst rate a user can take. The UI labels it "House rate". Code, stories and the API keep "house quote".
 - **Offer** — A P2P rate posted by a user (the **maker**) to sell one currency for the other. It is either **fixed** (a set rate) or **pegged** (market rate ± a percentage the maker chooses, repriced on every rate change).
 - **Quote board** — The live list of the house quote and the open offers for one direction (USD→EUR or EUR→USD).
 - **Take** — Accepting all or part of an offer, or the house quote, for an amount the user chooses. The user who takes is the **taker**. Takes on one offer fill in arrival order.
@@ -145,7 +171,8 @@ Priorities follow the confirmed MoSCoW (Must / Should / Could).
 **Description:** Every user has a wallet with a USD and an EUR balance, each split into available, held and pending. A history lists every deposit, withdrawal, exchange and transfer with its current status. Realizes JTBD-3.
 
 #### FR-1: Sign up and sign in
-A person can create a wallet with email and password and sign in. No identity verification in the pilot; see §5.
+A person can create a wallet with email, password and a display name, and sign in. No identity verification in the pilot; see §5.
+- The display name is required, and the user can change it later. Other users see it before sending a transfer (FR-24).
 - A new wallet starts with zero in both balances.
 
 #### FR-2: See balances by bucket
@@ -192,10 +219,12 @@ The wallet never credits a partner confirmation automatically unless it matches 
 
 ### 4.3 Withdrawals — Must
 
-**Description:** A user takes money out of a balance in the same currency, either to their own bank account or as cash with a withdrawal code. The amount is pending until the partner confirms. Realizes UJ-1.
+**Description:** A user takes money out of a balance in the same currency, either to their own bank account or as cash with a withdrawal code. The amount is pending until the partner confirms. Realizes UJ-1, UJ-6.
 
 #### FR-8: Bank payout
-A user can withdraw from an available balance to a bank account in the same currency, after an all-in cost preview.
+A user can withdraw from an available balance to a bank account in the same currency, after an all-in cost preview. Realizes UJ-6.
+- The user enters the payout bank account in the withdrawal flow and can save it for later payouts.
+- A user can view, edit and remove saved payout bank accounts.
 - The amount moves to pending. It leaves the balance on partner confirmation, or returns to available if the partner rejects it.
 
 #### FR-9: Cash withdrawal by code
@@ -271,7 +300,7 @@ A user whose take loses to another taker is told the offer was taken or no longe
 
 ### 4.6 Posting offers — Must
 
-**Description:** A user who doesn't like the rates on the board posts their own offer and waits to be filled. Realizes JTBD-2, JTBD-4.
+**Description:** A user who doesn't like the rates on the board posts their own offer and waits to be filled. Realizes JTBD-2, JTBD-4, UJ-4.
 
 #### FR-21: Post an offer
 A user can post a fixed or pegged offer from available funds.
@@ -289,7 +318,7 @@ A maker can cancel an open offer. Held funds return to available.
 
 ### 4.7 Wallet-to-wallet transfers — Should
 
-**Description:** A user sends funds in one currency to another wallet, for example to settle a split bill. Realizes JTBD-5.
+**Description:** A user sends funds in one currency to another wallet, for example to settle a split bill. Realizes JTBD-5, UJ-5.
 
 #### FR-24: Send a transfer
 A user can send available funds to another wallet in the same currency, identified by email.
@@ -398,3 +427,4 @@ Measured on pilot activity with test money.
 1. Before going live: research found no evidenced rail for depositing USD cash into a bank account in Germany. Retail cash points in Germany typically handle EUR only, so the USD cash rail is the open problem. Partner appetite (partner bank and cash partners) and licensing (e.g. e-money) are unresearched.
 2. Before going live: should unattributable funds that nobody claims be returned to the sender, and after how long? Cash deposits have no sender account to return to.
 3. Before going live: compliance and partner-rail requirements that will add FRs. These are identity verification at sign-up (the cash partner's ID check in UJ-1 needs something to check against), AML cash limits and source-of-funds checks (in Germany, ID from €2,500), partner fees deducted before funds arrive, a US bank for USD transfers and payouts, and per-user virtual accounts instead of per-request references.
+4. What service time does back office commit to for resolving unattributable funds after a user attaches a receipt (FR-26)? For now the UI makes no time promise ("We'll let you know when it's done").
