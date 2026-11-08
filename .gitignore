@@ -1,0 +1,14 @@
+# Personal BMad config
+_bmad/config.user.toml
+_bmad/custom/config.user.toml
+
+# Local tooling
+.claude/settings.local.json
+__pycache__/
+.venv/
+.DS_Store
+
+# BMad point-in-time review reports
+_bmad-output/**/review-*.md
+_bmad-output/**/reconcile-*.md
+
