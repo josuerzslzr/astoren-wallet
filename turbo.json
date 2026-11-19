@@ -1,0 +1,37 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "globalDependencies": [
+    "eslint.config.js",
+    "tsconfig.base.json"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "lint": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "test": {
+      "dependsOn": [
+        "^build",
+        "//#test:tooling"
+      ]
+    },
+    "//#test:tooling": {
+      "inputs": [
+        "eslint.config.js",
+        "package.json",
+        ".npmrc",
+        ".nvmrc",
+        "tooling/**"
+      ]
+    }
+  }
+}

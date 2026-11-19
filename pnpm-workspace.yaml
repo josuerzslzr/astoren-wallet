@@ -1,0 +1,7 @@
+packages:
+  - apps/*
+  - simulators/*
+  - packages/*
+
+ignoredBuiltDependencies:
+  - "@scarf/scarf"
