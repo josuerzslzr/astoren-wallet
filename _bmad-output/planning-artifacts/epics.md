@@ -109,7 +109,7 @@ Requirement IDs keep the PRD's numbering (FR-n, NFR-n) for traceability. Items t
 ### Additional Requirements
 
 **Scaffold / starter (impacts Epic 1 Story 1).** No third-party starter template. A greenfield scaffold per the spine source tree:
-- pnpm workspaces + Turborepo 2.11.x monorepo with `apps/{wallet-api, web}`, `simulators/{bank-sim, cash-sim, fx-sim, mock-issuer}`, `packages/{contracts, money}`, `docs/partner-specs/`, `infra/{terraform/persistent, terraform/session, helm, scripts/deploy.sh}`.
+- pnpm workspaces + Turborepo 2.11.x monorepo with `apps/{wallet-api, web}`, `simulators/{bank-sim, cash-sim, fx-sim, mock-jwt-issuer}`, `packages/{contracts, money}`, `docs/partner-specs/`, `infra/{terraform/persistent, terraform/session, helm, scripts/deploy.sh}`.
 - Node 26 LTS, TypeScript 6.x, ESM. NestJS 12 starter for wallet-api (two entry points: `main.ts` api + `worker.ts` worker) and each simulator. Vite 8 + React 19.3 + React Router 8 + TanStack Query 5 + shadcn/ui + Tailwind + lucide-react for web.
 - First build story includes a spike: OpenAPI generation from zod v4 schemas on NestJS 12 (whether @nestjs/swagger reads Standard Schema, or via `z.toJSONSchema`).
 
@@ -163,7 +163,7 @@ Requirement IDs keep the PRD's numbering (FR-n, NFR-n) for traceability. Items t
 - Recipient lookup by email is rate-limited per user and returns only display name + opaque recipient id.
 
 **Partner edge and simulators (AD-1, AD-4, ADR-1)**
-- `simulators/{bank-sim, cash-sim, fx-sim}` (plus `simulators/mock-issuer`): separate single-instance NestJS apps with in-memory state, never importing wallet code, workspace packages or each other (lint-enforced). Wire specs live in `docs/partner-specs/{bank,cash,fx}.md` and are duplicated, not shared.
+- `simulators/{bank-sim, cash-sim, fx-sim}` (plus `simulators/mock-jwt-issuer`): separate single-instance NestJS apps with in-memory state, never importing wallet code, workspace packages or each other (lint-enforced). Wire specs live in `docs/partner-specs/{bank,cash,fx}.md` and are duplicated, not shared.
 - HMAC-SHA256 over `timestamp + "." + rawBody` with `X-Signature`/`X-Timestamp` headers and a timestamp window, both directions. Partner routes are exempt from the JWT guard and the envelope.
 - The partners inbox row is the sole dedupe for partner events (insert → translate → handler(tx) → record outcome → commit → ack).
 - Outbound partner calls never run inside a tx. The tx writes an outbox command, and the worker calls the port after commit with the business id as the partner idempotency key.
@@ -386,7 +386,7 @@ So that every later story builds, lints and tests the same way from day one.
 **When** I run `pnpm install && pnpm turbo build lint test`
 **Then** it succeeds on Node 26 LTS with TypeScript 6.x and ESM
 **And** the tree matches the spine: `apps/wallet-api` (with `src/main.ts` api and `src/worker.ts` worker entry points, NestJS 12), `apps/web` (Vite 8 + React 19.3 + React Router 8 + TanStack Query 5 + Tailwind + shadcn/ui + lucide-react), `packages/contracts` (zod v4), `packages/money` (decimal.js), `docs/partner-specs/`, `infra/{terraform,helm,scripts}`
-**And** `simulators/{bank-sim, cash-sim, fx-sim, mock-issuer}` exist as NestJS 12 stubs (one placeholder route with a static dummy payload, one test), and a test import from any of them into `apps/`, `packages/` or a sibling simulator fails `pnpm lint`
+**And** `simulators/{bank-sim, cash-sim, fx-sim, mock-jwt-issuer}` exist as NestJS 12 stubs (one placeholder route with a static dummy payload, one test), and a test import from any of them into `apps/`, `packages/` or a sibling simulator fails `pnpm lint`
 
 **Given** the module list in AD-3
 **When** I inspect `apps/wallet-api/src`
@@ -498,7 +498,7 @@ So that I start with a USD and an EUR balance at zero (FR-1).
 
 **Acceptance Criteria:**
 
-**Given** `simulators/mock-issuer` running locally
+**Given** `simulators/mock-jwt-issuer` running locally
 **When** it issues a token
 **Then** the token has Cognito access-token claims (`sub`, `iss`, `token_use=access`, `client_id`, `cognito:groups`), is signed with a key published at a JWKS endpoint, and is deployed by the deploy script as a local-only chart
 
@@ -628,7 +628,7 @@ So that I can exercise exchanges before deposits exist and trust the ledger (SM-
 
 **Given** the idempotent seed Kubernetes Job (local and dev only)
 **When** the deploy script runs it, once or many times
-**Then** test users exist mapped to known mock-issuer `sub`s locally (and to existing Cognito `sub`s in dev, configured outside git), the house treasury holds USD and EUR, and every seeded amount was posted through `LedgerService.post` as `seed` journals against opening equity (AD-23)
+**Then** test users exist mapped to known mock-jwt-issuer `sub`s locally (and to existing Cognito `sub`s in dev, configured outside git), the house treasury holds USD and EUR, and every seeded amount was posted through `LedgerService.post` as `seed` journals against opening equity (AD-23)
 **And** running it twice creates no duplicate users or journals
 
 **Given** wallet-worker running

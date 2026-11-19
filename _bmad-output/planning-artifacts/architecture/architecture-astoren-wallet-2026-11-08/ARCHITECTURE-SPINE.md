@@ -437,11 +437,12 @@ sequenceDiagram
 astoren-wallet/
   apps/
     wallet-api/        # NestJS: main.ts (api) + worker.ts (worker); src/<module>/ per AD-3
+    web/               # Vite + React SPA
+  simulators/          # stand-ins for outside parties; import nothing outside their own app (AD-1)
     bank-sim/          # NestJS partner simulator, in-memory state
     cash-sim/          # NestJS partner simulator, in-memory state
     fx-sim/            # NestJS FX feed simulator (session open/closed control)
-    mock-issuer/       # local JWT issuer emitting Cognito-shaped tokens
-    web/               # Vite + React SPA
+    mock-jwt-issuer/   # local JWT issuer emitting Cognito-shaped tokens
   packages/
     contracts/         # zod schemas, envelope, returnCodes, WS events (AD-21, AD-22)
     money/             # convert(), comparator, margins, decimal + bigint helpers, format/parse (AD-7 to AD-10)
