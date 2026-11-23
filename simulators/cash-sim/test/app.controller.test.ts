@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
+import { AppController } from '../src/app.controller.js';
+import { AppService } from '../src/app.service.js';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -15,6 +15,6 @@ describe('AppController', () => {
   });
 
   it('GET / returns the static placeholder payload', () => {
-    expect(appController.getStatus()).toEqual({ service: 'fx-sim', status: 'stub' });
+    expect(appController.getStatus()).toEqual({ service: 'cash-sim', status: 'stub' });
   });
 });

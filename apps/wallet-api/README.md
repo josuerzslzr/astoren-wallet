@@ -11,7 +11,7 @@ The wallet backend: one NestJS 12 codebase with two runnables.
 
 - `pnpm build`: `nest build` to `dist/`
 - `pnpm start`: run the api (`node dist/worker.js` runs the worker)
-- `pnpm test`: Vitest unit specs (`src/**/*.spec.ts`) and e2e specs (`test/**/*.e2e-spec.ts`)
+- `pnpm test`: Vitest unit and e2e tests, all under `test/` (`*.test.ts`, e2e as `*.e2e.test.ts`)
 - `pnpm lint`: `tsc --noEmit`, then ESLint with the root config
 
 ## Status

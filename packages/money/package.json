@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "lint": "tsc --noEmit -p tsconfig.json && eslint .",
-    "test": "node --test 'src/**/*.test.ts'"
+    "test": "node --test 'test/**/*.test.ts'"
   },
   "dependencies": {
     "decimal.js": "^10.6.0"

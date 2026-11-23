@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { spikeEchoRequestSchema } from './spike.schema.ts';
+import { spikeEchoRequestSchema } from '../src/spike.schema.ts';
 
 test('spikeEchoRequestSchema accepts a valid body and applies defaults', () => {
   assert.deepEqual(spikeEchoRequestSchema.parse({ message: 'hi' }), { message: 'hi', count: 1 });

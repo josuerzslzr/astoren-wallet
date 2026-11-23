@@ -1,8 +1,8 @@
 import { Test } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from './app.module.js';
-import { setupOpenApi } from './openapi.setup.js';
+import { AppModule } from '../src/app.module.js';
+import { setupOpenApi } from '../src/openapi.setup.js';
 
 describe('OpenAPI spike (POST /spike/echo)', () => {
   let app: INestApplication;

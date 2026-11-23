@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ModulesContainer } from '@nestjs/core';
-import { AppModule } from './app.module.js';
+import { AppModule } from '../src/app.module.js';
 
 const EXPECTED_MODULES = [
   'IdentityModule',

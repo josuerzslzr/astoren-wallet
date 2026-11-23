@@ -5,7 +5,7 @@ pnpm + Turborepo monorepo. Layout and versions follow the architecture spine (se
 ## Requirements
 
 - **Node 26 LTS** (`.nvmrc`). `engines.node` is `>=26` and `.npmrc` sets `engine-strict=true`, so `pnpm install` fails on an older Node. Run `nvm use` first.
-- **pnpm 10** (pinned through `packageManager`; `corepack enable` picks it up).
+- **pnpm 10**, pinned through `packageManager`. Node 25+ no longer bundles corepack, so install it once per Node version: `npm install -g corepack && corepack enable` (or `npm install -g pnpm@10.33.0`).
 
 ## One command
 

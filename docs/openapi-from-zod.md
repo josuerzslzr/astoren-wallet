@@ -35,7 +35,7 @@ That one schema both validates the body (`StandardSchemaValidationPipe`, registe
 - Sample schema: `packages/contracts/src/spike.schema.ts` (`spikeEchoRequestSchema`).
 - Sample route: `apps/wallet-api/src/platform/spike.controller.ts` (`POST /spike/echo`).
 - Document setup: `apps/wallet-api/src/openapi.setup.ts`. It serves Swagger UI at `/docs` and the JSON at `/docs-json`.
-- Test: `apps/wallet-api/src/openapi.setup.spec.ts` asserts that the `$ref` and the component's constraints are in `/docs-json` and that invalid bodies get a 400.
+- Test: `apps/wallet-api/test/openapi.setup.test.ts` asserts that the `$ref` and the component's constraints are in `/docs-json` and that invalid bodies get a 400.
 
 Try it locally:
 

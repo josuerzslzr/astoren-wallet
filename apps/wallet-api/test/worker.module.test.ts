@@ -1,6 +1,6 @@
 import { NestFactory, ModulesContainer } from '@nestjs/core';
-import { WALLET_MODULES } from './app.module.js';
-import { WorkerModule } from './worker.module.js';
+import { WALLET_MODULES } from '../src/app.module.js';
+import { WorkerModule } from '../src/worker.module.js';
 
 describe('worker runnable (WorkerModule)', () => {
   it('starts an application context with all ten modules and closes cleanly', async () => {
