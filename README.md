@@ -15,6 +15,14 @@ pnpm install && pnpm turbo build lint test
 
 The root scripts `pnpm build`, `pnpm lint` and `pnpm test` run the same Turborepo tasks.
 
+## Toolchain standards
+
+- **Tests:** Vitest in every workspace and in `tooling/` (`pnpm test:tooling`). Tests live in `<workspace>/test/` as `*.test.ts(x)`.
+- **Format:** one root `.prettierrc` (single quotes, trailing commas, semicolons); Markdown is not formatted. `pnpm format` rewrites, and `turbo lint` runs `prettier --check .` as `//#format:check`.
+- **Lint:** type-aware `typescript-eslint` (`recommendedTypeChecked`), so a forgotten `await` fails `no-floating-promises`. `turbo lint` also type-checks and lints `tooling/` (`//#lint:tooling`).
+- **Pre-commit:** husky + lint-staged run `eslint --fix` and `prettier --write` on staged files only. The hook loads nvm when present. The full suite stays in the one command above.
+- **Hook usage:** hooks install on `pnpm install` (the `prepare` script). The hook re-stages the files it formats. Skip it with `git commit --no-verify` or `HUSKY=0`.
+
 ## Layout
 
 | Path | What |
@@ -26,7 +34,7 @@ The root scripts `pnpm build`, `pnpm lint` and `pnpm test` run the same Turborep
 | `packages/money` | `@astoren/money`: decimal.js based money helpers. |
 | `docs/` | Decision notes (`openapi-from-zod.md`) and `partner-specs/`. |
 | `infra/` | Terraform, Helm and deploy scripts (placeholders for now). |
-| `tooling/` | Root checks: `boundaries/` (lint boundary fixtures) and `toolchain/` (Node 26 pin). |
+| `tooling/` | Root checks (Vitest): `boundaries/` (lint boundary fixtures), `tests-layout/` and `toolchain/` (Node 26 pin). |
 
 ## Module boundaries
 

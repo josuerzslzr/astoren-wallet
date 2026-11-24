@@ -101,6 +101,8 @@ context:
 
 ## Spec Change Log
 
+- **2026-11-24 — Addendum: toolchain standards** (`spec-1-1-toolchain-standards.md`). Within this story's goal ("every later story builds, lints and tests the same way from day one"): Vitest replaces `node --test` in `packages/*` and `tooling/`; one root Prettier config (`.prettierrc`, `*.md` excluded) replaces the five per-app copies and is checked by `//#format:check` under `turbo lint`; lint becomes type-aware (`recommendedTypeChecked` + `projectService`); `tooling/` is type-checked and linted by `//#lint:tooling`; husky + lint-staged run on pre-commit. The "`node --test`" mentions above (Tasks, Verification) are superseded by `pnpm test:tooling`.
+
 ## Review Triage Log
 
 | # | Source | Finding | Verdict | Evidence | Route |
