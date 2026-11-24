@@ -30,7 +30,13 @@
         "package.json",
         ".npmrc",
         ".nvmrc",
-        "tooling/**"
+        "tooling/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*-spec.ts",
+        "**/*-spec.tsx"
       ]
     }
   }
