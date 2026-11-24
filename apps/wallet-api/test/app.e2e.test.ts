@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types.js';
-import { AppModule } from './../src/app.module.js';
+import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication } from "@nestjs/common";
+import request from "supertest";
+import { App } from "supertest/types.js";
+import { AppModule } from "./../src/app.module.js";
 
-describe('wallet-api (e2e)', () => {
+describe("wallet-api (e2e)", () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -16,12 +16,12 @@ describe('wallet-api (e2e)', () => {
     await app.init();
   });
 
-  it('/spike/echo (POST)', () => {
+  it("/spike/echo (POST)", () => {
     return request(app.getHttpServer())
-      .post('/spike/echo')
-      .send({ message: 'hi' })
+      .post("/spike/echo")
+      .send({ message: "hi" })
       .expect(200)
-      .expect({ echoed: ['hi'] });
+      .expect({ echoed: ["hi"] });
   });
 
   afterEach(async () => {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from "@nestjs/common";
 
 export interface PlaceholderStatus {
   service: string;
@@ -9,6 +9,6 @@ export interface PlaceholderStatus {
 @Injectable()
 export class AppService {
   getStatus(): PlaceholderStatus {
-    return { service: 'fx-sim', status: 'stub' };
+    return { service: "fx-sim", status: "stub" };
   }
 }

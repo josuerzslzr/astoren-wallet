@@ -1,5 +1,5 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService, type PlaceholderStatus } from './app.service.js';
+import { Controller, Get } from "@nestjs/common";
+import { AppService, type PlaceholderStatus } from "./app.service.js";
 
 @Controller()
 export class AppController {

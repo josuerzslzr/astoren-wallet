@@ -1,2 +1,2 @@
 // Boundaries fixture stub. Not real code.
-export const PlatformService = 'PlatformService';
+export const PlatformService = "PlatformService";

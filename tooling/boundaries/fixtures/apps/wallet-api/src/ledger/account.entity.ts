@@ -1,2 +1,2 @@
 // Boundaries fixture stub. Not real code.
-export const AccountEntity = 'AccountEntity';
+export const AccountEntity = "AccountEntity";

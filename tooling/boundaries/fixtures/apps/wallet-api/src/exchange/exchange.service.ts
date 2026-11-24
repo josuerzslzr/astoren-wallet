@@ -1,2 +1,2 @@
 // Boundaries fixture stub. Not real code.
-export const ExchangeService = 'ExchangeService';
+export const ExchangeService = "ExchangeService";

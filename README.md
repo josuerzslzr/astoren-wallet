@@ -18,7 +18,7 @@ The root scripts `pnpm build`, `pnpm lint` and `pnpm test` run the same Turborep
 ## Toolchain standards
 
 - **Tests:** Vitest in every workspace and in `tooling/` (`pnpm test:tooling`). Tests live in `<workspace>/test/` as `*.test.ts(x)`.
-- **Format:** one root `.prettierrc` (single quotes, trailing commas, semicolons); Markdown is not formatted. `pnpm format` rewrites, and `turbo lint` runs `prettier --check .` as `//#format:check`.
+- **Format:** one root `.prettierrc` (double quotes, trailing commas, semicolons); Markdown is not formatted. `pnpm format` rewrites, and `turbo lint` runs `prettier --check .` as `//#format:check`.
 - **Lint:** type-aware `typescript-eslint` (`recommendedTypeChecked`), so a forgotten `await` fails `no-floating-promises`. `turbo lint` also type-checks and lints `tooling/` (`//#lint:tooling`).
 - **Pre-commit:** husky + lint-staged run `eslint --fix` and `prettier --write` on staged files only. The hook loads nvm when present. The full suite stays in the one command above.
 - **Hook usage:** hooks install on `pnpm install` (the `prepare` script). The hook re-stages the files it formats. Skip it with `git commit --no-verify` or `HUSKY=0`.

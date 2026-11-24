@@ -25,7 +25,7 @@ context:
 **Never:** Touch `_bmad/`, `.claude/`, `_bmad-output/` content beyond the two spec files. CI pipelines (Epic 2), coverage thresholds, commit-message linting, money lint rules (Stories 1.4 / 1.5). Disabling a type-aware rule repo-wide to make lint pass.
 
 **Decisions (2026-11-24):**
-- Prettier style: Nest style, `{ "singleQuote": true, "trailingComma": "all" }` with semicolons; `apps/web` is reformatted to it.
+- Prettier style: double quotes (Prettier's default, `"singleQuote": false`), trailing commas and semicolons. Revised by the user on 2026-11-24 after implementation; it was first decided as Nest style (`"singleQuote": true`).
 - Markdown: `*.md` is excluded from Prettier.
 - Pre-commit: staged files only (lint-staged: `eslint --fix` + `prettier --write`); the full suite stays in `pnpm turbo build lint test`.
 - Spec size: kept whole (~1,850 tokens) at the user's choice.
@@ -75,6 +75,8 @@ context:
 - **Commits (for the user):** suggested split, one per standard: (1) Vitest: `packages/*`, `tooling/*.test.ts`, `tooling/vitest.config.ts`, root `test:tooling`; (2) Prettier config + `//#format:check` + per-app removals; (3) `pnpm format` pass alone (re-run `pnpm format` after (2) on a clean tree to isolate it); (4) type-aware lint + `//#lint:tooling` + `openapi.setup.test.ts` fix; (5) husky + lint-staged; (6) README + spec change log. Changes are currently mixed in the working tree (e.g. root `package.json`, `turbo.json`), so splitting needs `git add -p`.
 
 ## Spec Change Log
+
+- **2026-11-24 — Quote style revised to double quotes (user decision, after commit `663ef9e`).** Trigger: the user preferred Prettier's default double quotes, which also match JSON, JSX attributes and generated shadcn/ui code. Amended: the Prettier decision in the frozen block. `.prettierrc` sets `"singleQuote": false`, and `pnpm format` reformatted the repo in a separate `style:` commit. The Implementation Notes keep describing the first, single-quote format pass as it happened. KEEP: trailing commas, semicolons, the pinned Prettier version and every enforcement point (`//#format:check`, lint-staged) are unchanged.
 
 ## Review Triage Log
 
