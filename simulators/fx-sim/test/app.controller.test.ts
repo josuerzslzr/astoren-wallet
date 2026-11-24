@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from '../src/app.controller.js';
-import { AppService } from '../src/app.service.js';
+import { Test, TestingModule } from "@nestjs/testing";
+import { AppController } from "../src/app.controller.js";
+import { AppService } from "../src/app.service.js";
 
-describe('AppController', () => {
+describe("AppController", () => {
   let appController: AppController;
 
   beforeEach(async () => {
@@ -14,7 +14,10 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  it('GET / returns the static placeholder payload', () => {
-    expect(appController.getStatus()).toEqual({ service: 'fx-sim', status: 'stub' });
+  it("GET / returns the static placeholder payload", () => {
+    expect(appController.getStatus()).toEqual({
+      service: "fx-sim",
+      status: "stub",
+    });
   });
 });

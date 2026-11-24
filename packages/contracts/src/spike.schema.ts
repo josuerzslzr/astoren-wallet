@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Sample request body for the Story 1.1 OpenAPI spike route (`POST /spike/echo`).
@@ -6,9 +6,14 @@ import { z } from 'zod';
  */
 export const spikeEchoRequestSchema = z
   .object({
-    message: z.string().min(1).max(200).describe('Text to echo back'),
-    count: z.int().min(1).max(10).default(1).describe('How many times to repeat it'),
+    message: z.string().min(1).max(200).describe("Text to echo back"),
+    count: z
+      .int()
+      .min(1)
+      .max(10)
+      .default(1)
+      .describe("How many times to repeat it"),
   })
-  .meta({ id: 'SpikeEchoRequest' });
+  .meta({ id: "SpikeEchoRequest" });
 
 export type SpikeEchoRequest = z.infer<typeof spikeEchoRequestSchema>;

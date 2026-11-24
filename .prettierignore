@@ -1,0 +1,10 @@
+# Prettier 3 also reads .gitignore (node_modules, dist, .turbo, coverage, ...).
+pnpm-lock.yaml
+*.md
+_bmad/
+_bmad-output/
+.claude/
+# Ignored by apps/web/.gitignore, which Prettier does not read.
+**/.vscode/
+**/dist-ssr/
+**/logs/

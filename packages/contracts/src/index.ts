@@ -1,1 +1,4 @@
-export { spikeEchoRequestSchema, type SpikeEchoRequest } from './spike.schema.js';
+export {
+  spikeEchoRequestSchema,
+  type SpikeEchoRequest,
+} from "./spike.schema.js";

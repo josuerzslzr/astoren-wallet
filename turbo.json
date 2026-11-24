@@ -1,27 +1,40 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": [
-    "eslint.config.js",
-    "tsconfig.base.json"
-  ],
+  "globalDependencies": ["eslint.config.js", "tsconfig.base.json"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        "dist/**"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
     },
     "lint": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build", "//#lint:tooling", "//#format:check"]
     },
     "test": {
-      "dependsOn": [
-        "^build",
-        "//#test:tooling"
+      "dependsOn": ["^build", "//#test:tooling"]
+    },
+    "//#lint:tooling": {
+      "inputs": [
+        "eslint.config.js",
+        "tsconfig.base.json",
+        "package.json",
+        "tooling/**"
+      ]
+    },
+    "//#format:check": {
+      "inputs": [
+        ".prettierrc",
+        ".prettierignore",
+        ".gitignore",
+        "package.json",
+        "**",
+        "!**/*.md",
+        "!**/node_modules/**",
+        "!**/dist/**",
+        "!.turbo/**",
+        "!**/.turbo/**",
+        "!_bmad/**",
+        "!_bmad-output/**",
+        "!.claude/**"
       ]
     },
     "//#test:tooling": {
