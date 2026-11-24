@@ -5,5 +5,5 @@
     "noEmit": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["boundaries/fixtures/**"]
+  "exclude": ["boundaries/fixtures/**", "typed-lint/fixtures/**"]
 }
