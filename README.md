@@ -1,6 +1,6 @@
 # astoren-wallet
 
-> **Practice project.** This is a learning exercise, not a financial product. It holds no real money, is not licensed or regulated, and its partner integrations are local simulators. Do not deploy it to handle real funds.
+> **Practice project.** This is a practice exercise, not a financial product. It holds no real money, is not licensed or regulated, and its partner integrations are local simulators. Do not deploy it to handle real funds.
 
 A USD/EUR exchange wallet pilot. Users hold both currencies and exchange them at a house quote or by taking a better P2P offer. Money moves in and out through a partner bank or cash partner, and every partner is a local simulator. Product framing: [PRD §1][prd-vision]. The code is a pnpm + Turborepo monorepo whose layout and versions follow the [architecture spine][spine].
 
@@ -64,7 +64,7 @@ flowchart TB
 ## Requirements
 
 - **Node 26 LTS** (`.nvmrc`). `engines.node` is `>=26` and `.npmrc` sets `engine-strict=true`, so `pnpm install` fails on an older Node. Run `nvm use` first.
-- **pnpm 10**, pinned through `packageManager`. Node 25+ no longer bundles corepack, so install it once per Node version: `npm install -g corepack && corepack enable` (or `npm install -g pnpm@10.33.0`).
+- **pnpm 10**, pinned through `packageManager`. Node 25+ no longer bundles corepack, so install it once per Node version: `npm install -g corepack && corepack enable` (or `npm install -g` the pnpm version named in `packageManager`).
 
 ## One command
 

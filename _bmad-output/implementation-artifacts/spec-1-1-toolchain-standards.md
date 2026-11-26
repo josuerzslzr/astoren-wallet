@@ -78,6 +78,16 @@ context:
 
 - **2026-11-24 — Quote style revised to double quotes (user decision, after commit `663ef9e`).** Trigger: the user preferred Prettier's default double quotes, which also match JSON, JSX attributes and generated shadcn/ui code. Amended: the Prettier decision in the frozen block. `.prettierrc` sets `"singleQuote": false`, and `pnpm format` reformatted the repo in a separate `style:` commit. The Implementation Notes keep describing the first, single-quote format pass as it happened. KEEP: trailing commas, semicolons, the pinned Prettier version and every enforcement point (`//#format:check`, lint-staged) are unchanged.
 
+- **2026-11-26 — Test standards from the Story 1.1 gap review (user decisions).** Trigger: a code review of `5641468` and `109e292`, which neither earlier review covered. Findings are in the Story 1.1 spec's `### Review Findings`.
+  - **Test layout is enforced by runner selection.** `tooling/tests-layout` now fails on any file matching `*.{test,spec}.[cm][jt]s(x)` that its workspace's `test` script does not select. A config without an explicit `test.include` fails, and so does a `test` script that is not `vitest run`. Each workspace must have at least one selected test. This replaces the earlier two checks (no `*.spec.ts`; tests under `test/`).
+  - **Nest CLI spec generation is off** (`generateOptions.spec: false` in all five `nest-cli.json`).
+  - **wallet-api tests may import any file of any module**, entry points and private roles included. Element edges still apply: no simulators, no web. This is recorded in module-boundaries.md and covered by three boundaries probes.
+  - **`//#test:tooling` inputs** add `.gitignore`, `**/package.json`, `**/vitest.config*.ts` and every test-like extension.
+  - **The typed-lint test gets a 30 s timeout.** It exceeded Vitest's 5 s default while the full turbo run's tasks ran in parallel.
+  - **No restriction on Nest first-party packages for now.** The user decided to revisit per story. No root `AGENTS.md`: the project uses Claude only.
+  - **Superseded in the Story 1.1 spec:** Implementation Notes paths `src/openapi.setup.spec.ts` and `test/app.e2e-spec.ts` are now `test/openapi.setup.test.ts` and `test/app.e2e.test.ts`, and its `node --test` mentions now point to Vitest.
+  - KEEP: Vitest everywhere, `test/**/*.test.ts` includes, e2e under `turbo test`.
+
 ## Review Triage Log
 
 | # | Source | Finding | Verdict | Evidence | Route |

@@ -68,6 +68,40 @@ context:
 - Given the spike route, when wallet-api runs locally, then the OpenAPI JSON contains the sample route with the zod-derived request schema, and `docs/openapi-from-zod.md` names the approach.
 - Given a temporary `import` of `../exchange/exchange.service.js` inside `src/ledger/ledger.module.ts`, when `pnpm lint` runs, then it fails.
 
+### Review Findings
+
+Code review 2026-11-24 of the commits neither earlier review covered: `8266aa2..109e292` (`5641468` test relocation, `109e292` agent context + tests-layout guard). Checked against HEAD (`1e63861`).
+
+- [x] [Review][Decision] Module-private files cannot be unit-tested — the `test/` layout guard forbids tests inside `src/<module>/`, and `wallet-test` (`eslint.config.js:87-88`) may reach only the `*.service|module|types.ts` roles, so no test can import a controller, entity, repository or job (acceptance-auditor). Resolved 2026-11-26 (user): open everything to tests. Option chosen over mirroring modules under `test/<module>/`.
+- [x] [Review][Decision] The tests-layout guard checks where files sit, not whether a runner selects them — a narrowed include (e.g. one that drops `*.e2e.test.ts`) passes silently (verification-gap). `.mts`/`.js` tests and a `test/*.test.tsx` in a Nest workspace also slip through (blind-hunter, edge-case-hunter). Resolved 2026-11-26 (user): one runner-selection rule replaces both layout checks.
+- [x] [Review][Patch] Let wallet-api tests import any wallet-api file — add an ESLint block for `apps/wallet-api/test/**` that allows `wallet-entry` in element-types, and every file of `wallet-module` / `wallet-entry` in entry-point. Add one boundaries fixture probe (a test importing another module's entity passes) and one line in module-boundaries.md ("tests in `apps/wallet-api/test/` are exempt from module edges and file roles") [eslint.config.js:86, tooling/boundaries/boundaries.test.ts]
+- [x] [Review][Patch] Replace the two layout checks with one runner-selection rule — every workspace file matching `\.(test|spec)\.[cm]?[jt]sx?$` must be selected by the `test.include` of the vitest config its workspace's `test` script runs (the one `turbo test` uses; a first draft that merged every `vitest.config*.ts` missed a unit include narrowed to drop e2e). Configs without an explicit `include`, and `test` scripts other than `vitest run`, fail. `//#test:tooling` inputs gain `**/vitest.config*.ts` and `**/package.json` [tooling/tests-layout/tests-layout.test.ts, turbo.json:40]
+- [x] [Review][Patch] Nest CLI still generates `*.spec.ts`, which the guard rejects — set `"generateOptions": { "spec": false }` [apps/wallet-api/nest-cli.json:1 and the four simulators]
+- [x] [Review][Patch] Guard reports moved-but-unstaged files — `git ls-files --cached` still lists a path deleted from the working tree. Drop paths that no longer exist on disk [tooling/tests-layout/tests-layout.test.ts:12]
+- [x] [Review][Patch] Guard reads `git ls-files` without `-z` — `core.quotePath` C-quotes non-ASCII paths, so the workspace regex skips them [tooling/tests-layout/tests-layout.test.ts:14]
+- [x] [Review][Patch] Guard passes vacuously if the workspace regex stops matching — the guard now asserts at least one workspace and at least one selected test per workspace (verification-gap) [tooling/tests-layout/tests-layout.test.ts]
+- [x] [Review][Patch] `//#test:tooling` cache inputs omit `.gitignore`, which `--exclude-standard` reads — an ignore-rule change can replay a stale pass [turbo.json:40]
+- [x] [Review][Patch] Package `tsconfig.json` now has `rootDir: "."` and `outDir: "dist"` without `noEmit` — a manual `tsc -p tsconfig.json` writes `dist/src/**` and `dist/test/**` beside the `./dist/index.js` export. Set `noEmit: true` there and `noEmit: false` in `tsconfig.build.json` [packages/contracts/tsconfig.json:4, packages/money/tsconfig.json:4]
+- [x] [Review][Patch] README repeats the pnpm version (`pnpm@10.33.0`), which will drift from `packageManager` [README.md:8]
+- [x] [Review][Closed] Starter AGENTS.md rules dropped without carry-over [CLAUDE.md] — resolved 2026-11-26: `vi.fn()` rule added to CLAUDE.md `## Tests`; first-party packages left unrestricted for now (user: revisit per story). Originally: `vi.fn()` not `jest.fn()` and the first-party package list (e.g. whether `@nestjs/schedule`, `@nestjs/event-emitter`, `@nestjs/config` conflict with AD-19/AD-17/AD-25) are absent. The deferred-work status for this item says "surviving rules moved… No action left".
+- [x] [Review][Closed] CLAUDE.md does not state the test layout rule (`<workspace>/test/*.test.ts(x)`, no `*.spec.ts`), which goes against the Nest default agents write by habit [CLAUDE.md] — resolved 2026-11-26: CLAUDE.md `## Tests`, outside the bmad-project-context block so a refresh keeps it
+- [x] [Review][Closed] No `AGENTS.md` entry point for non-Claude agents after the five were deleted [CLAUDE.md] — dropped 2026-11-26: Claude only (user)
+
+Applied 2026-11-26. Verified with `pnpm turbo build lint test --force`: 27/27 tasks, exit 0. Probes, each removed afterwards: `src/x.spec.ts`, `test/x.test.mts`, `test/x.test.tsx` in fx-sim, a wallet-api unit include narrowed to drop e2e, a removed `include`, a non-vitest `test` script, and a workspace's only test moved away unstaged. Each failed tests-layout with a named file or message. A real wallet-api test importing `SpikeController` passes lint. `nest g service --dry-run` writes no spec. `.gitignore`, `vitest.config.ts` and `*.spec.mts` changes each change the `//#test:tooling` hash. Also fixed: `typed-lint.test.ts` timed out at Vitest's 5 s default in the full parallel run, failing even with the old guard; it now has a 30 s timeout.
+
+**Rejected**
+
+- `false` Guard crashes outside a git checkout — the failure is loud. Tooling tests run only from a git clone through turbo, and no Docker image runs them.
+- `false` Nest `tsconfig.build.json` dropped `**/*spec.ts` and the package builds dropped `src/**/*.test.ts` excludes, so stray tests could ship — the guard fails `turbo test` on any test under `src/` or named `*.spec.ts` before it reaches a build.
+- `false` `apps/web/tsconfig.app.json` including `test` makes test type errors fail the build — intended; review triage #7 asked for tests to be type-checked.
+- `false` `tooling/tsconfig.json` is not wired to any task — true at `109e292`, fixed at HEAD by `56c8bb3` (`//#lint:tooling`).
+- `false` README does not mention `tests-layout/` — fixed at HEAD (README `tooling/` row).
+- `low` `//#test:tooling` inputs too broad (any test edit reruns the slow ESLint tooling tests) — the fix is a separate turbo task, not a direct correction, and the cost is a few seconds.
+- `low` Unanchored `*personal-notes*` in `.gitignore` is out of story scope — harmless; no tracked path matches.
+- `low` Implementation Notes still cite `src/openapi.setup.spec.ts` and `test/app.e2e-spec.ts`; the Spec Change Log has no entry for the test layout — the fix edits this spec.
+- `low` Starter AGENTS.md files deleted rather than trimmed to their NestJS section — justified by the triage #12 resolution in deferred-work.md.
+- `low` Spec-name regex flags any `*-spec.ts` source file — no longer applies: the runner-selection rule (D2) replaces that regex.
+
 ## Implementation Notes
 
 **Environment:** Node 26.13.1 is installed through nvm, but the default shell resolves Node 24. Prefix commands with `export PATH=$HOME/.nvm/versions/node/v26.13.1/bin:$PATH`. pnpm 10.33.0 is on that PATH. Nothing has been installed yet (`pnpm install` has not run).

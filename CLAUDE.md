@@ -35,3 +35,9 @@ Practice multi-currency wallet: NestJS 12 `apps/wallet-api` (api + worker), Reac
 - Money: state changes are guarded `UPDATE … WHERE state IN (…) RETURNING`; never TypeORM `save()` on money or state rows (AD-13).
 
 <!-- /bmad:context -->
+
+## Tests
+
+- Vitest in every workspace and `tooling/`: mocks are `vi.fn()` / `vi.mock()`, never `jest.*`.
+- Tests live in `<workspace>/test/` as `*.test.ts(x)`, never `*.spec.ts` or next to the source. `tooling/tests-layout` fails `turbo test` on any test file the workspace's `test` script (its vitest `include`) does not select. Nest CLI spec generation is off.
+- wallet-api tests may import any file of any module, entry points and private roles included; they still cannot import simulators or web (module-boundaries.md).

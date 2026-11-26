@@ -64,7 +64,7 @@ The repo is empty. Every later astoren-wallet story assumes one way to install, 
 
 ## Assumptions
 
-- Each app uses its starter's default test runner. Story 1.1 makes no repo-wide runner choice.
+- Each app uses its starter's default test runner. Story 1.1 makes no repo-wide runner choice. *Superseded 2026-11-24 by the toolchain addendum (`spec-1-1-toolchain-standards.md`): Vitest in every workspace and `tooling/`, tests in `<workspace>/test/` as `*.test.ts(x)`.*
 - CAP-3's "starts a NestJS application context" is stricter than the source AC, which only requires that the entry points exist. It was added so CAP-3 can be tested.
 - Each stub app ships one trivial passing test, so `turbo test` exercises every workspace.
 - Composition roots (root modules, `main.ts`, `worker.ts`) may register every module, platform included. The C4 L3 "entry points" edge applies to controllers, the gateway and worker jobs (see [module-boundaries.md](module-boundaries.md)).

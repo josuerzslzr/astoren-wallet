@@ -29,6 +29,8 @@ Even across an allowed edge, another module may import only these file roles:
 
 Files inside a module may import each other freely. This is a trial: if a needed role doesn't fit, change this table rather than working around the rule.
 
+Tests in `apps/wallet-api/test/` are exempt from the file roles: they may import any file of any wallet-api module, entry points included. They still cannot import simulators or web. (Story 1.1 review, 2026-11-26.)
+
 ## Notes that bear on the lint config
 
 - `partners` never imports `deposits` or `withdrawals`. They register with its `PartnerEventHandler` instead, which avoids a cycle.
