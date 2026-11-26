@@ -26,3 +26,20 @@ coverage/
 .env.*
 !.env.example
 *.log
+
+# Infra state and per-environment values (public repo: never commit these)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+*_override.tf
+.terraformrc
+terraform.rc
+kubeconfig*
+*.kubeconfig
+*.pem
+*.key

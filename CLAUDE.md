@@ -12,6 +12,8 @@ Practice multi-currency wallet: NestJS 12 `apps/wallet-api` (api + worker), Reac
 - Never log tokens, HMAC secrets, payout details or withdrawal codes (AD-24).
 - Infrastructure config comes only from env vars / mounted K8s Secrets, zod-validated at boot; no hardcoded config or console-only setup (AD-25).
 - No auth bypass flag in any environment, local included; tokens are always verified against JWKS (AD-20).
+- The repo is public. Never commit Terraform state or `*.tfvars` (only `*.tfvars.example`), kubeconfigs, AWS account IDs or ARNs, or signing keys; the mock JWT issuer generates its keys at runtime.
+- GitHub Actions: trigger on `pull_request`, never `pull_request_target`; set top-level `permissions: contents: read` and widen per job only as needed; reach AWS through GitHub OIDC, never long-lived access keys.
 
 ## Running and verifying
 
