@@ -43,13 +43,11 @@
         "package.json",
         ".npmrc",
         ".nvmrc",
+        ".gitignore",
         "tooling/**",
-        "**/*.test.ts",
-        "**/*.test.tsx",
-        "**/*.spec.ts",
-        "**/*.spec.tsx",
-        "**/*-spec.ts",
-        "**/*-spec.tsx"
+        "**/package.json",
+        "**/vitest.config*.ts",
+        "**/*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"
       ]
     }
   }

@@ -85,7 +85,13 @@ const elementTypeRules = [
   { from: ["wallet-root"], allow: ["wallet-root", "wallet-module", "package"] },
   {
     from: ["wallet-test"],
-    allow: ["wallet-test", "wallet-root", "wallet-module", "package"],
+    allow: [
+      "wallet-test",
+      "wallet-root",
+      "wallet-module",
+      "wallet-entry",
+      "package",
+    ],
   },
   // Simulators: only their own folder (CAP-7). No packages, apps or siblings.
   { from: ["simulator"], allow: [["simulator", { name: "${from.name}" }]] },
@@ -187,6 +193,14 @@ export default defineConfig([
       ],
       "boundaries/no-unknown": "error",
     },
+  },
+
+  // wallet-api tests may import any file of the elements they can reach,
+  // private roles and entry points included (module-boundaries.md). Element
+  // edges still apply: no simulators, no web. Matches the boundaries fixtures too.
+  {
+    files: ["**/apps/wallet-api/test/**/*.{ts,tsx}"],
+    rules: { "boundaries/entry-point": ["error", { default: "allow" }] },
   },
 
   {

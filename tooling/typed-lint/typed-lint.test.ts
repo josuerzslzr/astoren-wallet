@@ -12,15 +12,23 @@ const probe = path.join(
   "fixtures/floating-promise.probe.ts",
 );
 
-test("an un-awaited promise fails @typescript-eslint/no-floating-promises", async () => {
-  // `ignore: false` lifts the global ignore that keeps the probe out of lint.
-  const eslint = new ESLint({ cwd: repoRoot, ignore: false });
-  const [result] = await eslint.lintFiles([probe]);
-  assert(result, `no lint result for ${probe}`);
-  expect(
-    result.messages.map((m) => ({ ruleId: m.ruleId, severity: m.severity })),
-  ).toContainEqual({
-    ruleId: "@typescript-eslint/no-floating-promises",
-    severity: 2,
-  });
-});
+// Type-aware lint cold-starts a TypeScript program: ~2 s alone, over Vitest's
+// 5 s default while `turbo build lint test` runs other tasks in parallel.
+const typedLintTimeoutMs = 30_000;
+
+test(
+  "an un-awaited promise fails @typescript-eslint/no-floating-promises",
+  async () => {
+    // `ignore: false` lifts the global ignore that keeps the probe out of lint.
+    const eslint = new ESLint({ cwd: repoRoot, ignore: false });
+    const [result] = await eslint.lintFiles([probe]);
+    assert(result, `no lint result for ${probe}`);
+    expect(
+      result.messages.map((m) => ({ ruleId: m.ruleId, severity: m.severity })),
+    ).toContainEqual({
+      ruleId: "@typescript-eslint/no-floating-promises",
+      severity: 2,
+    });
+  },
+  typedLintTimeoutMs,
+);

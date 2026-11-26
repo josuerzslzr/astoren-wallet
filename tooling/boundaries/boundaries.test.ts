@@ -11,6 +11,7 @@ const repoRoot = path.resolve(import.meta.dirname, "../..");
 const fixtures = path.join(import.meta.dirname, "fixtures");
 const api = "apps/wallet-api/src";
 const bankSim = "simulators/bank-sim/src";
+const apiTest = "apps/wallet-api/test";
 
 /** 'pass', or the exact boundaries rule that must reject the import. */
 type Expectation = "pass" | "element-types" | "entry-point" | "external";
@@ -62,6 +63,22 @@ const cases: Array<[file: string, expected: Expectation, label: string]> = [
     `${api}/ledger/ledger.job.ts`,
     "pass",
     "entry point uses its own module private file",
+  ],
+  // wallet-api tests: any file of a reachable element, but element edges still apply
+  [
+    `${apiTest}/imports-ledger-entity.probe.ts`,
+    "pass",
+    "test -> another module private file",
+  ],
+  [
+    `${apiTest}/imports-ledger-controller.probe.ts`,
+    "pass",
+    "test -> entry point",
+  ],
+  [
+    `${apiTest}/imports-bank-sim.probe.ts`,
+    "element-types",
+    "test -> simulator",
   ],
   // simulator isolation (CAP-7)
   [
