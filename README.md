@@ -2,7 +2,64 @@
 
 > **Practice project.** This is a learning exercise, not a financial product. It holds no real money, is not licensed or regulated, and its partner integrations are local simulators. Do not deploy it to handle real funds.
 
-pnpm + Turborepo monorepo. Layout and versions follow the architecture spine (see `_bmad-output/`).
+A USD/EUR exchange wallet pilot. Users hold both currencies and exchange them at a house quote or by taking a better P2P offer. Money moves in and out through a partner bank or cash partner, and every partner is a local simulator. Product framing: [PRD §1][prd-vision]. The code is a pnpm + Turborepo monorepo whose layout and versions follow the [architecture spine][spine].
+
+## Source of truth
+
+The planning docs are authoritative; this README only routes you to them.
+
+| Question | Document |
+|---|---|
+| What and why | [PRD][prd] · [addendum][prd-addendum] (technical mechanism) |
+| Rules the code follows | [Architecture spine][spine] (AD-n decisions) |
+| How it fits together | [C4 model][c4] · [ADRs][adrs] (reader's guides to the spine) |
+| Look and behaviour | [DESIGN][ux-design] · [EXPERIENCE][ux-experience] · [mockups][ux-mockups] (HTML, open locally) |
+| Plan and stories | [Epics][epics] · story specs in [implementation-artifacts][impl] and [specs][specs] |
+
+[prd]: _bmad-output/planning-artifacts/prds/prd-astoren-wallet-2026-11-04/prd.md
+[prd-vision]: _bmad-output/planning-artifacts/prds/prd-astoren-wallet-2026-11-04/prd.md#1-vision
+[prd-addendum]: _bmad-output/planning-artifacts/prds/prd-astoren-wallet-2026-11-04/addendum.md
+[spine]: _bmad-output/planning-artifacts/architecture/architecture-astoren-wallet-2026-11-08/ARCHITECTURE-SPINE.md
+[c4]: _bmad-output/planning-artifacts/architecture/architecture-astoren-wallet-2026-11-08/companions/c4.md
+[adrs]: _bmad-output/planning-artifacts/architecture/architecture-astoren-wallet-2026-11-08/companions/README.md
+[ux-design]: _bmad-output/planning-artifacts/ux-designs/ux-astoren-wallet-2026-11-08/DESIGN.md
+[ux-experience]: _bmad-output/planning-artifacts/ux-designs/ux-astoren-wallet-2026-11-08/EXPERIENCE.md
+[ux-mockups]: _bmad-output/planning-artifacts/ux-designs/ux-astoren-wallet-2026-11-08/mockups/
+[epics]: _bmad-output/planning-artifacts/epics.md
+[impl]: _bmad-output/implementation-artifacts/
+[specs]: _bmad-output/specs/
+
+## System context
+
+Who uses the wallet and which outside systems it depends on. The three `*-sim` services are built here but play outside parties, so the wallet reaches them only through partner-style interfaces (AD-1, AD-4). Containers, components and deployment are in the [C4 model][c4].
+
+<!-- Copied from the C4 model, Level 1 (companions/c4.md). Edit there first, then sync here. -->
+```mermaid
+flowchart TB
+  user["User (everyday exchanger or liquidity provider)"]
+  operator["Operator (Cognito operator group)"]
+
+  wallet["Astoren Wallet: hold, deposit, exchange, transfer, withdraw USD and EUR"]
+
+  cognito["Amazon Cognito (identity provider)"]
+  bank["bank-sim: stands in for the partner bank"]
+  cash["cash-sim: stands in for the cash partner"]
+  fx["fx-sim: stands in for the FX quote service"]
+
+  user -->|"signs up, signs in"| cognito
+  user -->|"uses the web app"| wallet
+  operator -->|"operator APIs under /ops"| wallet
+  operator -->|"drives partner events"| bank
+  operator -->|"drives partner events"| cash
+  operator -->|"simulates market closure"| fx
+
+  wallet -->|"verifies access tokens"| cognito
+  wallet -->|"payout commands"| bank
+  wallet -->|"outbound commands"| cash
+  bank -->|"signed deposit and payout confirmations"| wallet
+  cash -->|"signed cash confirmations"| wallet
+  wallet -->|"subscribes to market rate feed"| fx
+```
 
 ## Requirements
 
