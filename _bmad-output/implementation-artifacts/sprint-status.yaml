@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 11-27-2026 10:32
-last_updated: 11-27-2026 10:32
+last_updated: 11-27-2026 10:44
 project: astoren-wallet
 project_key: NOKEY
 tracking_system: file-system
@@ -82,3 +82,21 @@ development_status:
 
   epic-10: backlog
   epic-10-retrospective: optional
+build_order: # Reference only. Walking skeleton, Epic 1 and 2 interleave (epics/epic-2-pilot-on-aws.md § Build order). The status view's next story ignores this list.
+  - 1-2-api-conventions-config-envelope-errors-logging-and-health
+  - 1-3-database-migrations-and-local-cluster-deploy
+  - 2-1-persistent-aws-foundation # walking skeleton: /readyz from RDS over HTTPS by 2-4
+  - 2-2-session-environment-up-and-down
+  - 2-3-wallet-on-dev-answering-from-rds
+  - 2-4-public-https-entry-alb-behind-cloudfront
+  - 2-5-logs-to-cloudwatch # optionally pull 2-7 forward here so PR checks run from now on
+  - 1-4-money-basics-in-packages-money # 1-4 to 1-11: each deployed to dev as it lands
+  - 1-5-ledger-core-accounts-journals-and-balance-projection
+  - 1-6-sign-in-tokens-the-jwt-guard-and-user-provisioning
+  - 1-7-web-app-shell-and-design-system
+  - 1-8-sign-up-verify-email-sign-in-and-sign-out
+  - 1-9-see-my-balances-on-home
+  - 1-10-account-and-profile
+  - 1-11-seeded-test-users-and-the-reconciliation-job
+  - 2-6-real-identity-sign-up-on-the-internet
+  - 2-7-github-actions-pr-checks-deploy-and-nightly-teardown # if not done after 2-5
