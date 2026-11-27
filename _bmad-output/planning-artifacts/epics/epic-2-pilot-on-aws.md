@@ -29,7 +29,7 @@ Each story lists its prerequisites. A story never depends on a later-numbered st
 
 Decided 2026-11-26 while drafting the stories:
 
-- **HTTPS through CloudFront's default domain.** A CloudFront distribution on `*.cloudfront.net` sits in front of the session ALB, and the ALB accepts traffic only from CloudFront. The URL changes per session until an own domain is added (deferred follow-up). This amends AD-26, which says nothing about HTTPS: **handoff to architecture** to record it in the spine.
+- **HTTPS through CloudFront's default domain.** A CloudFront distribution on `*.cloudfront.net` sits in front of the session ALB, and the ALB accepts traffic only from CloudFront. The URL changes per session until an own domain is added (deferred follow-up). AD-26 says nothing about HTTPS. Recording it in the spine is **deferred** (user decision 2026-11-27) until the own-domain / ALB exploration, since CloudFront may turn out to be a temporary workaround.
 - **Terraform owns the ALB.** The session root creates the ALB, its target groups and listener rules, so CloudFront's origin is known at apply time and `destroy` leaves nothing behind. The AWS Load Balancer Controller only attaches pods to those target groups (`TargetGroupBinding`). It never creates load balancers.
 - **Session lifecycle.** `infra/scripts/session.sh up|down` runs locally. A nightly scheduled GitHub workflow runs `down` as a safety net against a forgotten session.
 - **Cluster add-ons are installed by `session.sh up`** with `helm upgrade --install` from one pinned versions file, after `terraform apply`. They are not installed through the Terraform Helm provider, so the session root never configures a provider from a cluster it is creating. Each story adds the add-on it needs to that file.

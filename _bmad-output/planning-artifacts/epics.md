@@ -188,7 +188,7 @@ This file is the master: requirements, coverage and the epic list. Each epic's d
 - Environments `local` (minikube 1.36, Postgres 18 pod, MinIO pod, simulator pods, mock issuer, everything reachable via minikube ingress) and `dev` (AWS EKS 1.36, RDS Postgres 18.6, S3, Cognito). Same PG major and K8s minor in both.
 - Infra config only from env vars / mounted Secrets, zod-validated at boot (fail fast). Dev secrets live in SSM SecureString, synced by External Secrets Operator via EKS Pod Identity (`ssm:GetParameter*`, `kms:Decrypt`). Nothing is configured by hand in the console.
 - Two Terraform roots: `persistent` (Cognito, ECR, SSM, state bucket; always on) and `session` (VPC public subnets with no NAT, EKS, ALB, RDS starting empty, S3 receipts; applied and destroyed per session).
-- Public HTTPS via CloudFront's default `*.cloudfront.net` domain in front of the session ALB, which admits only CloudFront (origin-facing prefix list + secret origin header). The ALB and target groups are Terraform-managed; the Load Balancer Controller only binds pods. Own domain + ACM deferred. **Amends AD-26 (decided 2026-11-26 in Epic 2 drafting; handoff to architecture).**
+- Public HTTPS via CloudFront's default `*.cloudfront.net` domain in front of the session ALB, which admits only CloudFront (origin-facing prefix list + secret origin header). The ALB and target groups are Terraform-managed; the Load Balancer Controller only binds pods. Own domain + ACM deferred. **Not yet in AD-26: spine update deferred to the own-domain / ALB exploration (decided 2026-11-27); CloudFront may be temporary.**
 - Session lifecycle: `session.sh up|down` locally, plus a nightly scheduled GitHub workflow running `down` as a safety net.
 - The ALB routes only to wallet-api and web. Simulators are ClusterIP, reached by operators via port-forward or an IP-restricted endpoint (IPs in untracked tfvars).
 - One Helm 4 chart per runnable (`values-local.yaml`/`values-dev.yaml`). One deploy script (build → push ECR → migration Job → seed Job → helm upgrade) is the only path, run locally or by GitHub Actions. Fluent Bit sends logs to CloudWatch in dev. The ingress idle timeout must be more than 2× the socket.io ping interval.
@@ -202,7 +202,7 @@ This file is the master: requirements, coverage and the epic list. Each epic's d
 - Rate display direction toggle (quote-per-base vs inverse): priority, placement, default, persistence.
 - Price alert re-arm after firing (architecture fires once).
 - "Expiry pending" neutral wording on non-final items past `expiresAt` until expiry jobs ship.
-- (Epic 2) Record CloudFront HTTPS in AD-26 (architecture). Copy for the "choose your display name" step shown when a Cognito user signs in to a rebuilt dev database with no wallet (UX).
+- (Epic 2) Record HTTPS entry in AD-26 once the own-domain / ALB exploration settles whether CloudFront stays (architecture, deferred). Copy for the "choose your display name" step shown when a Cognito user signs in to a rebuilt dev database with no wallet (UX).
 
 ### UX Design Requirements
 

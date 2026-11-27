@@ -132,7 +132,7 @@ So that money is always accounted for and drift can be detected (NFR-1).
 
 **Given** the ledger migrations
 **When** they run
-**Then** `ledger.currencies` holds USD and EUR (ISO code + exponent 2), and `account` rows exist per `(owner_type, owner_id, currency, bucket)` for house/system positions: treasury, cash at partner bank, opening equity and rounding/fee revenue per currency (AD-6)
+**Then** `ledger.currency` holds USD and EUR (ISO code + exponent 2), and `ledger.account` rows exist per `(owner_type, owner_id, currency, bucket)` for the house/system positions per currency, with buckets `treasury`, `cash_at_partner_bank`, `opening_equity` and `rounding_revenue` (AD-6's "rounding/fee revenue")
 **And** user accounts have a DB `CHECK (balance >= 0)`, and every account and projection row has `version bigint`
 
 **Given** `LedgerService.lockAccounts(tx, ids)`
@@ -168,6 +168,7 @@ So that I start with a USD and an EUR balance at zero (FR-1).
 **Then** `identity` inserts the user (email unique, display name, Cognito `sub` → `user_id`) with `ON CONFLICT (cognito_sub) DO NOTHING`, and only when its insert won it creates available, held and pending accounts at zero for every supported currency in the same transaction
 **And** two concurrent `POST /me` calls for the same `sub` create exactly one user and one set of accounts
 **And** a missing or blank display name is refused with a 2xx returnCode
+**And** a `POST /me` for an already provisioned user changes nothing, not even the display name, and returns the existing user, so a retried sign-up is safe
 
 **Given** a provisioned user
 **When** they call `GET /me`
@@ -268,8 +269,9 @@ So that friends recognise me when they send money and the app looks the way I li
 
 **Given** Profile
 **When** I save a new non-blank display name
-**Then** `POST /me` updates it, and `GET /me` returns the new name
-**And** a blank name is refused inline and nothing is saved
+**Then** the client calls `PATCH /me { displayName }`, `identity` updates the name in one statement that also increments `version`, and both the response and a later `GET /me` return the new name and `version` (AD-12 single-row write, AD-22)
+**And** a blank name is refused inline and nothing is sent; the server refuses a blank name with the same 2xx returnCode as `POST /me`
+**And** `PATCH /me` for a signed-in person with no wallet yet is refused with a 2xx returnCode (not provisioned) and creates nothing
 
 **Given** Theme
 **When** I pick light, dark or system
@@ -287,6 +289,7 @@ So that I can exercise exchanges before deposits exist and trust the ledger (SM-
 **When** the deploy script runs it, once or many times
 **Then** test users exist mapped to known mock-jwt-issuer `sub`s locally (and to existing Cognito `sub`s in dev, configured outside git), the house treasury holds USD and EUR, and every seeded amount was posted through `LedgerService.post` as `seed` journals against opening equity (AD-23)
 **And** running it twice creates no duplicate users or journals
+**And** in dev, while no Cognito `sub` mapping is configured (it arrives in Story 2.6), the Job seeds only the house treasury, skips test users and logs that it did, instead of failing the deploy
 
 **Given** wallet-worker running
 **When** the reconciliation job runs on its schedule
