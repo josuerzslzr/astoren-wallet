@@ -3,7 +3,7 @@
 
 ## astoren-wallet
 
-Practice multi-currency wallet: NestJS 12 `apps/wallet-api` (api + worker), React `apps/web`, four isolated NestJS partner simulators, shared `packages/contracts` (zod) and `packages/money`. pnpm + Turborepo, ESM throughout. Architecture decisions (AD-n) live in `_bmad-output/planning-artifacts/architecture/architecture-astoren-wallet-2026-11-08/ARCHITECTURE-SPINE.md`, ADRs in its `companions/adr/`. PRD, UX and `epics.md` are in `_bmad-output/planning-artifacts/`; story specs in `_bmad-output/implementation-artifacts/` and `_bmad-output/specs/`.
+Practice multi-currency wallet: NestJS 12 `apps/wallet-api` (api + worker), React `apps/web`, four isolated NestJS partner simulators, shared `packages/contracts` (zod) and `packages/money`. pnpm + Turborepo, ESM throughout. Architecture decisions (AD-n) live in `_bmad-output/planning-artifacts/architecture/architecture-astoren-wallet-2026-11-08/ARCHITECTURE-SPINE.md`, ADRs in its `companions/adr/`. PRD, UX and `epics.md` (master: requirements, coverage, epic list; each epic's stories in `epics/epic-<n>-<slug>.md`) are in `_bmad-output/planning-artifacts/`; story specs in `_bmad-output/implementation-artifacts/` and `_bmad-output/specs/`.
 
 ## Policy
 
